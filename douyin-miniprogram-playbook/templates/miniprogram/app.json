@@ -1,0 +1,19 @@
+{
+  "pages": ["business/pages/index/index", "business/pages/mine/index"],
+  "window": {
+    "backgroundColor": "#FFFFFF",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "{{APP_NAME}}",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#333333",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "business/pages/index/index", "text": "首页" },
+      { "pagePath": "business/pages/mine/index", "text": "我的" }
+    ]
+  },
+  "style": "v2"
+}

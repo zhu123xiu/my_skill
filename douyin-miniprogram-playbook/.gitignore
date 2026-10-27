@@ -1,0 +1,3 @@
+setup/.secrets.local.json
+templates/server/.secrets.local.json
+subject-profile/
