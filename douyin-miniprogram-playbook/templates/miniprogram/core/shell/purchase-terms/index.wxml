@@ -1,0 +1,29 @@
+<view class="page-shell purchase-terms-page">
+  <view class="purchase-terms__hero">
+    <view class="purchase-terms__title">购买须知</view>
+    <view class="purchase-terms__intro">请在购买前阅读以下规则。</view>
+  </view>
+
+  <!-- Virtual goods notice -->
+  <view class="soft-card purchase-terms__section">
+    <view class="purchase-terms__heading">虚拟商品说明</view>
+    <view class="purchase-terms__body">本小程序所售商品及服务均为虚拟内容，购买成功后将即时解锁对应权益，通过本小程序提供在线阅读或使用服务。支付成功以平台确认为准。</view>
+  </view>
+
+  <!-- Refund policy -->
+  <view class="soft-card purchase-terms__section">
+    <view class="purchase-terms__heading">退款说明</view>
+    <view class="purchase-terms__body">虚拟商品一经开通不支持退款；如有疑问请联系客服协商处理。如遇重复扣款、付款后未解锁等特殊情况，我们将在核实后协助处理。如需退款，请通过客服渠道联系处理。</view>
+  </view>
+
+  <!-- Activation code rules -->
+  <view class="soft-card purchase-terms__section">
+    <view class="purchase-terms__heading">激活码规则</view>
+    <view class="purchase-terms__body">激活码仅限一次性使用，兑换后立即失效并绑定当前账号，不可转让，也不可重复兑换。请妥善保管激活码。</view>
+  </view>
+
+  <!-- Reference to compliance texts -->
+  <view class="purchase-terms__footer">
+    更多合规说明请参考 templates/snippets/compliance-texts.md 中的文案模板，并根据实际业务和平台要求进行调整。
+  </view>
+</view>

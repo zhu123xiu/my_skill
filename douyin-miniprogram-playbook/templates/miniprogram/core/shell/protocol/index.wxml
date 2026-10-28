@@ -1,0 +1,7 @@
+<view class="page-shell protocol-page">
+  <view class="soft-card protocol-hero">
+    <view class="protocol-hero__icon">i</view>
+    <view class="protocol-hero__title">{{appName}}</view>
+    <view class="protocol-hero__subtitle">{{appDescription}}</view>
+  </view>
+</view>

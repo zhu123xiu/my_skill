@@ -1,0 +1,41 @@
+<view class="page-shell mine-page">
+  <!-- Profile area -->
+  <view class="profile-card">
+    <view class="profile-card__top">
+      <view class="profile-card__avatar">{{userInfo.nickName[0] || 'U'}}</view>
+      <view class="profile-card__main">
+        <view class="profile-card__name">{{userInfo.nickName || '用户'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Menu list driven by business/menus.js -->
+  <view class="menu-card">
+    <block wx:for="{{menus}}" wx:key="id">
+      <view wx:if="{{item.action !== 'customer_service'}}" class="menu-item" data-item="{{item}}" bindtap="onMenuTap">
+        <view class="menu-item__icon menu-item__icon--{{item.tone || 'default'}}">{{item.icon || '·'}}</view>
+        <view class="menu-item__text">
+          <view class="menu-item__title">{{item.label}}</view>
+          <view wx:if="{{item.desc}}" class="menu-item__desc">{{item.desc}}</view>
+        </view>
+        <view class="chevron">›</view>
+      </view>
+    </block>
+
+    <!-- IM customer service entry (always shown) -->
+    <view class="menu-item menu-item--im">
+      <button
+        class="menu-item__im-btn"
+        open-type="im"
+        data-im-id="{{imId}}"
+        bindim="onByteHiContact"
+      ></button>
+      <view class="menu-item__icon menu-item__icon--service">客</view>
+      <view class="menu-item__text">
+        <view class="menu-item__title">联系客服</view>
+        <view class="menu-item__desc">咨询与售后问题，点此即时沟通</view>
+      </view>
+      <view class="chevron">›</view>
+    </view>
+  </view>
+</view>

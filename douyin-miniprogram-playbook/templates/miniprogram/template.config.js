@@ -1,6 +1,9 @@
 // Template configuration. Keep mechanism code unchanged; put business values here.
 module.exports = {
   appId: "{{APP_ID}}",
+  appName: "{{APP_NAME}}",
+  collectionPrefix: "{{COLLECTION_PREFIX}}",
+  imId: "{{IM_ID}}",
   homePage: "/business/pages/index/index",
   douyin: {
     envIdDev: "{{ENV_ID_DEV}}",

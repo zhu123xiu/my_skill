@@ -1,49 +1,246 @@
-# Platform task register
+# 平台待开通事项注册表
 
-Start long-running reviews first, then finish immediate tasks. Before submitting a form, show the user a summary. Scans, verification codes, face checks, signatures, and payments remain user actions.
+> 每张卡片围绕"AI 如何快速找到并开通"组织。
+> 发起阶段排序：天级审核项第一批并行提交 → 小时级 → 即时项随手办。
+> 发起阶段结束必须输出「等待清单」（待审核项 + 预计时长 + 查询入口 URL），建议用户建 automation 定时收割。
 
-## Service category
+---
 
-- Entry: capability or service-category management
-- Duration: immediate to days
-- Dependency: target category must support the intended payment capability
-- Output: category status in the waiting list; doctor checks the console state
+## 1. 服务类目添加
 
-## ICP filing
+- **入口**：能力管理 → 服务类目
+- **URL 模板**：`/microapp/{appId}/capability`
+- **前置依赖**：无
+- **审核时长**：即时 ~ 天级（视类目而定）
+- **开通步骤**：
+  1. 打开服务类目页，查看目标类目是否「可开放」
+  2. 对照 trade 文档确认目标支付能力（trade_basic）在该类目下是否可开放
+  3. 点击添加，填写类目信息
+  4. 部分类目需要补充资质（如网络出版许可证）——**MCC 避开特殊行业**，否则需要额外资质（真实踩坑）
+- **卡点**：特殊行业类目需补充资质，升级到 L3
+- **产出回写**：类目状态记录到等待清单
+- **doctor 验证**：检查控制台类目列表是否包含目标类目
 
-- Entry: filing portal outside the developer console
-- Duration: about 20 working days
-- Dependency: entity and website information
-- Output: filing number; blocks version submission, not development
+## 2. ICP 备案
 
-## Merchant onboarding
+- **入口**：站外备案系统（非小程序控制台内）
+- **URL 模板**：备案入口 URL 由控制台引导
+- **前置依赖**：主体资质（营业执照、法人身份证）
+- **审核时长**：约 20 工作日（阻塞版本提交，不阻塞开发）
+- **开通步骤**：
+  1. 发起阶段第一批提交
+  2. 准备主体资料（营业执照、法人身份证正反面、网站负责人手机号）
+  3. 填写网站信息、域名
+  4. 提交后等待管局审核
+- **卡点**：L3——可能需要人脸核验、短信验证
+- **产出回写**：备案号写入等待清单
+- **doctor 验证**：检查备案号是否已获取
 
-- Entry: payment account management
-- Duration: 1–3 days
-- Dependency: entity documents, category, settlement account
-- Output: merchant number and onboarding status
+## 3. 支付商户进件
 
-## Payment keys and balance alert
+- **入口**：能力 → 支付 → 账户管理
+- **URL 模板**：`/microapp/{appId}/pay?payHome=accountManage`
+- **前置依赖**：服务类目已添加、主体资料齐全
+- **审核时长**：1-3 天
+- **开通步骤**：
+  1. 进入支付账户管理页
+  2. 填写进件信息：主体名称、信用代码、法人信息、结算银行卡
+  3. **MCC 选择避开特殊行业**（否则需要网络出版许可证等补充资质）
+  4. 上传营业执照、法人身份证
+  5. 提交等待审核
+- **卡点**：L3——可能需要对公打款确认
+- **产出回写**：商户号写入 config
+- **doctor 验证**：检查商户号是否已获取
 
-- Entry: merchant key management and account alerts
-- Duration: immediate after onboarding
-- Dependency: approved merchant account
-- Output: keys in the platform-secrets document and a low-balance alert (suggested threshold: 5 yuan)
+## 4. 支付密钥生成
 
-## Customer service
+- **入口**：商户平台 → 密钥管理
+- **URL 模板**：`/microapp/{appId}/pay?payHome=keyManage`
+- **前置依赖**：商户进件已通过（卡片 3）
+- **审核时长**：即时
+- **开通步骤**：
+  1. 进件通过后进入密钥管理页
+  2. AI 代办生成密钥对（privateKey + publicKey + salt）
+  3. 将密钥写入 `{prefix}platform_secrets` 集合（doc `_id: "dy_payment"`）
+  4. 记录 key_version
+- **卡点**：无
+- **产出回写**：privateKey / publicKey / salt / keyVersion → secrets + platform_secrets
+- **doctor 验证**：本地签名 + 公钥验签自洽（§9.1 第 5 项）
 
-- Entry: byteHi or IM customer-service configuration
-- Duration: immediate to hours
-- Dependency: a staffed support account
-- Output: an online support route; required for transaction review
+## 5. 余额预警开启
 
-## Business account and promotion
+- **入口**：能力 → 支付 → 账户设置
+- **URL 模板**：`/microapp/{appId}/pay?payHome=accountSettings`
+- **前置依赖**：商户进件已通过
+- **审核时长**：即时
+- **开通步骤**：
+  1. 进入账户设置页
+  2. 开启余额预警
+  3. 设置阈值为 **5 元**（抖音云无免费期，欠费延停极短即停服）
+  4. 绑定预警通知手机号
+- **卡点**：无
+- **产出回写**：预警状态记录到等待清单
+- **doctor 验证**：检查预警是否已开启
 
-- Entry: enterprise business-account and capability authorization pages
-- Duration: about one day plus operator activation
-- Dependency: same-subject enterprise account; operator activates in the Douyin app within the platform window
-- Output: authorized mounting capabilities and promotion-plan status
+## 6. 客服接入
 
-## Waiting-list rule
+- **入口**：能力 → 客服管理
+- **URL 模板**：`/microapp/{appId}/capability/customerService`
+- **前置依赖**：无（提审硬性要求）
+- **审核时长**：即时 ~ 小时级
+- **开通步骤**：
+  1. 选择客服形态：byteHi（飞鸽客服）或 IM 客服，或并存
+  2. **byteHi**：配置客服账号，测试收发
+  3. **IM 客服**：需绑客服主管抖音号 → 在「抖音客服服务平台」设「在线」状态（不在线则用户消息不投递）
+  4. 提审期间客服账号必须保持在线（审核员会验证客服会话）
+  5. 代码接入三种形态：悬浮按钮、菜单行、降级 handler
+- **卡点**：L3——客服账号需人工扫码登录客服工作台
+- **产出回写**：客服形态 + imId 写入 config
+- **doctor 验证**：检查客服在线状态
 
-The launch phase must output each pending item, estimated duration, query URL, dependency, and the value to collect when approved. Keep it next to the project, never in credentials.
+**IM 客服事实表**：
+- 接待端：只有「抖音客服服务平台」web 工作台（扫码登录 + 手动设在线）
+- 用户侧：「抖音消息 → 第三方客服消息」聚合入口（不是普通私信列表）
+- 无消息推送 webhook，桥接外部 IM 只能走 byteHi「消息推送客服」板块
+- 预览/体验版对客服按钮有平台侧限制
+
+## 7. 企业机构账号创建
+
+- **入口**：运营 → 机构账号管理
+- **URL 模板**：`/microapp/{appId}/operation/institution`
+- **前置依赖**：企业主体资质
+- **审核时长**：约 1 天
+- **开通步骤**：
+  1. 进入机构账号管理页
+  2. 创建企业机构账号（**企业主体只能绑同主体机构号**——规范 2.7 条）
+  3. 填写机构号信息，提交审核
+- **卡点**：无（等待审核即可）
+- **产出回写**：机构号 ID 记录到等待清单
+- **doctor 验证**：检查机构号审核状态
+
+## 8. 机构号激活
+
+- **入口**：抖音 App → 侧边栏 → 通知中心 → 站内信
+- **前置依赖**：机构号创建审核通过（卡片 7）
+- **审核时长**：运营人 48h 内在抖音 App 激活
+- **开通步骤**：
+  1. 审核通过后，运营人用绑定手机号登录抖音 App（≥24.2.0）
+  2. 侧边栏 → 通知中心 → 找到激活站内信
+  3. 点击激活
+  4. 一个手机号可挂多账号，不影响原个人号
+- **卡点**：L3——必须运营人本人在抖音 App 操作
+- **产出回写**：激活状态记录
+- **doctor 验证**：检查激活状态
+
+## 9. 抖音号绑定 + 能力授权
+
+- **入口**：设置 → 关联设置 → 抖音号管理
+- **URL 模板**：`/microapp/{appId}/settings/relatedSettings`
+- **前置依赖**：机构号已激活（卡片 8）、能力已开通
+- **审核时长**：即时 ~ 小时级
+- **开通步骤**：
+  1. 小程序侧先开通目标能力（挂载、推广等）
+  2. 进入关联设置 → 抖音号管理 → 修改能力
+  3. 新增能力 → **勾选站内信通知（必选，否则提交按钮 disabled）**
+  4. 运营人在抖音 App 确认授权
+  5. 状态变为「已授权」
+- **卡点**：L3——运营人 App 确认
+- **产出回写**：授权状态记录
+- **doctor 验证**：检查能力授权状态
+
+## 10. 短视频自主挂载
+
+- **入口**：能力 → 挂载管理 → 短视频挂载
+- **URL 模板**：`/microapp/{appId}/capability/mounting`
+- **前置依赖**：能力已授权（卡片 9）
+- **审核时长**：即时生效
+- **开通步骤**：
+  1. 进入挂载管理页
+  2. 开通短视频自主挂载能力
+  3. 机构号发视频时可直接挂小程序锚点
+- **卡点**：无
+- **产出回写**：挂载状态记录
+- **doctor 验证**：检查挂载能力状态
+
+## 11. 短视频达人推广挂载
+
+- **入口**：能力 → 挂载管理 → 达人挂载
+- **URL 模板**：`/microapp/{appId}/capability/mounting`
+- **前置依赖**：「小程序推广计划」已开通（卡片 13）
+- **审核时长**：即时（依赖推广计划审核）
+- **开通步骤**：
+  1. 先开通小程序推广计划
+  2. 推广计划通过后，达人可在小程序推广计划中接单
+  3. 达人发短视频时可挂载小程序
+- **卡点**：无
+- **产出回写**：挂载状态记录
+- **doctor 验证**：检查达人挂载能力状态
+
+## 12. 直播挂载（自主/达人/页面配置）
+
+- **入口**：能力 → 挂载管理 → 直播挂载
+- **URL 模板**：`/microapp/{appId}/capability/mounting`
+- **前置依赖**：能力已授权（卡片 9）
+- **审核时长**：即时
+- **开通步骤**：
+  1. 开通直播自主挂载
+  2. 开通直播达人挂载（需推广计划）
+  3. 配置直播间页面挂载样式
+- **卡点**：无
+- **产出回写**：挂载状态记录
+- **doctor 验证**：检查直播挂载能力状态
+
+## 13. 小程序推广计划
+
+- **入口**：能力 → 推广管理 → 小程序推广计划
+- **URL 模板**：`/microapp/{appId}/capability/promotion`
+- **前置依赖**：机构号已创建（卡片 7）
+- **审核时长**：天级（需审核）
+- **开通步骤**：
+  1. 进入推广管理页
+  2. 申请开通小程序推广计划
+  3. 填写推广信息
+  4. 等待审核通过
+  5. 这是**零粉丝冷启动主推**方式，应尽早申请
+- **卡点**：无（等待审核）
+- **产出回写**：推广计划状态记录到等待清单
+- **doctor 验证**：检查推广计划审核状态
+
+## 14. 讲解卡自动触达
+
+- **入口**：能力 → 直播管理 → 讲解卡
+- **URL 模板**：`/microapp/{appId}/capability/liveCard`
+- **前置依赖**：已开通直播能力（卡片 12）
+- **审核时长**：即时 ~ 天级
+- **开通步骤**：
+  1. 先完成直播相关能力开通
+  2. 申请讲解卡自动触达能力
+  3. 配置讲解卡触发规则
+- **卡点**：无
+- **产出回写**：讲解卡状态记录
+- **doctor 验证**：检查讲解卡能力状态
+
+## 15. 抖音个人页挂载
+
+- **入口**：能力 → 挂载管理 → 个人页挂载
+- **URL 模板**：`/microapp/{appId}/capability/mounting`
+- **前置依赖**：能力已授权（卡片 9）
+- **审核时长**：即时
+- **开通步骤**：
+  1. 进入挂载管理页
+  2. 开通个人页挂载能力
+- **卡点**：**机构号不支持此能力**——绑定时报"该能力未开通或未满足开通条件"即此原因，勿纠缠
+- **产出回写**：挂载状态记录
+- **doctor 验证**：检查个人页挂载状态
+
+---
+
+## 等待清单规则
+
+发起阶段结束时必须输出等待清单，格式：
+
+| 事项 | 预计时长 | 查询入口 URL | 产出值 | 回写位置 |
+|------|----------|-------------|--------|----------|
+| ... | ... | ... | ... | config / secrets / platform_secrets |
+
+建议用户创建 automation 定时收割审核通过的项。收割阶段 AI 自动抓回产出值并回写。

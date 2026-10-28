@@ -1,0 +1,53 @@
+.page-shell {
+  padding: 24rpx;
+}
+
+.purchase-terms__hero {
+  padding: 28rpx 8rpx 12rpx;
+}
+
+.purchase-terms__title {
+  color: #333;
+  font-size: 48rpx;
+  font-weight: 800;
+}
+
+.purchase-terms__intro {
+  margin-top: 14rpx;
+  color: #999;
+  font-size: 26rpx;
+  line-height: 1.65;
+}
+
+.soft-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.purchase-terms__section {
+  margin-top: 22rpx;
+  padding: 30rpx;
+}
+
+.purchase-terms__heading {
+  color: #333;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.purchase-terms__body {
+  margin-top: 16rpx;
+  color: #666;
+  font-size: 26rpx;
+  line-height: 1.85;
+  text-align: justify;
+}
+
+.purchase-terms__footer {
+  margin-top: 32rpx;
+  padding: 20rpx 8rpx;
+  color: #aaa;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
