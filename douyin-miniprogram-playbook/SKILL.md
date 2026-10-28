@@ -1,3 +1,19 @@
+---
+name: douyin-miniprogram-playbook
+description: >-
+  Douyin (TikTok China) mini-program playbook: build from day zero to launch,
+  payment integration (trade_basic), dev/prod environments, review submission,
+  promotion cold start, refunds and operations. Use when developing a new Douyin
+  mini-program, migrating a WeChat mini-program, integrating Douyin payment,
+  debugging wrong-environment/no-traffic issues, handling refunds, submitting
+  for review, or setting up promotion/mounting capabilities.
+descriptionZh: >-
+  抖音小程序全流程手册与可复用模板包：从第 0 天搭建到上线、支付接入（trade_basic）、dev/prod 双环境、
+  提审、推广冷启动、退款运维。当用户要新开发抖音小程序、从微信迁移小程序、接入抖音支付、排查环境/流量
+  问题、处理退款售后、提审上线或开通挂载推广能力时使用。含模板代码包（core/business 分层）、平台事务
+  代办指南（platform-tasks）、值获取地图（value-map）、setup 脚本与五大血泪点速查。
+---
+
 # Douyin Miniprogram Playbook
 
 Build, migrate, test, launch, and promote a Douyin mini app from a reusable template.
