@@ -38,12 +38,12 @@ async function main() {
   }
 
   console.log("初始化 TCB 连接...");
+  // @cloudbase/node-sdk 用 AK/SK 直连：env + secretId + secretKey
+  // （与 server/core/db.js 一致；envId+credentials.private_key 是证书式，不适用于 AK/SK）
   const app = tcb.init({
-    envId: secrets.TCB_ENV,
-    credentials: {
-      private_key_id: secrets.TCB_SECRET_ID,
-      private_key: secrets.TCB_SECRET_KEY
-    }
+    env: secrets.TCB_ENV,
+    secretId: secrets.TCB_SECRET_ID,
+    secretKey: secrets.TCB_SECRET_KEY
   });
 
   const db = app.database();
@@ -71,6 +71,15 @@ async function main() {
   }
 
   console.log("\n=== 创建索引 ===");
+  // @cloudbase/node-sdk 的 database() 不提供 runCommand/createIndex，
+  // 索引需在微信云开发控制台或 CloudBase CLI 创建。此处检测到不可用则整体跳过，
+  // 不影响集合创建与数据导入（小数据量无索引亦可正常查询）。
+  if (typeof db.runCommand !== "function") {
+    console.log("⏳ 当前 SDK 不支持脚本建索引，跳过。");
+    console.log("   如需索引，请在微信云开发控制台按 template.config.js 的 indexes 手动创建。");
+    console.log("\n✔ 集合初始化完成（索引待控制台补充）");
+    return;
+  }
   // IMPORTANT: The field name is `indexes` not `indices` - this is a common pitfall
   for (const coll of collections) {
     if (!coll.indexes || coll.indexes.length === 0) {

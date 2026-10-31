@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|
 | L0 | collectionPrefix | Project name | `xxx_` | server config | None |
 | L0 | homePage | Page map | `/pages/...` | mini config | None |
-| L1 | appId | Console mini-app page or authorized URL | `tt` + 16 chars | mini/server config | Cloud calls |
+| L1 | appId | Console mini-app page or authorized URL | `tt` + 16–18 chars | mini/server config | Cloud calls |
 | L1 | dev/prod envId | Cloud development environment list | `env-...` | mini config | Cloud calls |
 | L1 | resourceEnv/serviceId | Environment detail and service list | platform IDs | mini config | Container calls |
 | L1 | TAG_GROUP | Payment capability page | `__UN_SHIFT_...` | server config | Payment setup |

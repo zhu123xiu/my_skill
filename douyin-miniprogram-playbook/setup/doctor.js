@@ -23,11 +23,12 @@ async function main() {
   const hasPlaceholders = /\{\{[^}]+\}\}/.test(configStr);
   check("dev", "配置无未解析占位符", !hasPlaceholders, "编辑 template.config.js 替换所有 {{...}}");
 
-  const appIdValid = /^tt[a-z0-9]{16}$/.test(config.appId || "");
-  check("dev", "appId 格式正确 (tt + 16位小写字母数字)", appIdValid, "在 template.config.js 设置正确的 appId");
+  const appIdValid = /^tt[a-z0-9]{16,18}$/.test(config.appId || "");
+  check("dev", "appId 格式正确 (tt + 16~18位小写字母数字)", appIdValid, "在 template.config.js 设置正确的 appId");
 
-  const envIdValid = typeof config.envId === "string" && config.envId.startsWith("env-");
-  check("dev", "envId 格式正确 (env- 开头)", envIdValid, "设置环境变量 TCB_ENV 或在 template.config.js 硬编码 envId");
+  // 抖音容器环境为 env- 前缀；微信云开发 TCB 环境为 cloudbase- 前缀，两者均合法。
+  const envIdValid = typeof config.envId === "string" && /^(env-|cloudbase-)/.test(config.envId);
+  check("dev", "envId 格式正确 (env- 或 cloudbase- 开头)", envIdValid, "设置环境变量 TCB_ENV 或在 template.config.js 硬编码 envId");
 
   const prefixSet = typeof config.collectionPrefix === "string" && config.collectionPrefix.length > 0 && config.collectionPrefix !== "xxx_";
   check("dev", "collectionPrefix 已设置", prefixSet, "在 template.config.js 设置实际的 collectionPrefix");
@@ -53,21 +54,25 @@ async function main() {
 
   // Milestone 3: TCB 连通性
   console.log("\n=== 3. TCB 连通性 ===");
-  let tcb = null;
+  let tcbApp = null;
   let tcbConnected = false;
+  // node-sdk 无 listCollections；用 count() 探测，ResourceNotFound 也证明鉴权/网络可达。
+  const notExist = (e) => /ResourceNotFound|not exist|COLLECTION_NOT_EXIST|DATABASE_COLLECTION_NOT_EXIST/i.test(String(e && (e.message || e.errMsg || e)));
   if (secretsExist && secrets.TCB_SECRET_ID && secrets.TCB_SECRET_KEY && secrets.TCB_ENV) {
     try {
-      tcb = require("@cloudbase/node-sdk");
-      const app = tcb.init({
-        envId: secrets.TCB_ENV,
-        credentials: {
-          private_key_id: secrets.TCB_SECRET_ID,
-          private_key: secrets.TCB_SECRET_KEY
-        }
+      const tcb = require("@cloudbase/node-sdk");
+      // AK/SK 直连：env + secretId + secretKey（与 server/core/db.js 一致）
+      tcbApp = tcb.init({
+        env: secrets.TCB_ENV,
+        secretId: secrets.TCB_SECRET_ID,
+        secretKey: secrets.TCB_SECRET_KEY
       });
-      const db = app.database();
-      // Test connection by listing collections
-      await db.listCollections();
+      const db = tcbApp.database();
+      try {
+        await db.collection(config.collectionPrefix + "platform_secrets").count();
+      } catch (e) {
+        if (!notExist(e)) throw e; // 集合不存在仍视为连通
+      }
       tcbConnected = true;
       check("dev", "TCB 连接成功", true, "");
     } catch (error) {
@@ -81,13 +86,17 @@ async function main() {
   console.log("\n=== 4. 密钥文档 ===");
   if (tcbConnected) {
     try {
-      const db = tcb.database();
+      const db = tcbApp.database();
       const secretsCollection = config.collectionPrefix + "platform_secrets";
       const secretsDocId = config.payment.secretsDocId || "dy_payment";
 
-      // Check collection exists
-      const collections = await db.listCollections();
-      const collectionExists = collections.data.some(c => c.name === secretsCollection);
+      // node-sdk 无 listCollections；用 count() 探测集合是否存在
+      let collectionExists = true;
+      try {
+        await db.collection(secretsCollection).count();
+      } catch (e) {
+        if (notExist(e)) collectionExists = false; else throw e;
+      }
       check("payment", `集合 ${secretsCollection} 存在`, collectionExists, `运行 node setup/init-collections.js`);
 
       if (collectionExists) {
@@ -146,7 +155,8 @@ async function main() {
       const https = require("https");
       const postData = JSON.stringify({
         appid: config.appId,
-        secret: secrets.appSecret
+        secret: secrets.appSecret,
+        grant_type: "client_credential"
       });
 
       const options = {
@@ -190,17 +200,19 @@ async function main() {
   console.log("\n=== 7. 集合/索引 ===");
   if (tcbConnected) {
     try {
-      const db = tcb.database();
-      const collections = await db.listCollections();
-      const collectionNames = collections.data.map(c => c.name);
-
+      const db = tcbApp.database();
       for (const coll of config.collections || []) {
         const fullName = config.collectionPrefix + coll.name;
-        const exists = collectionNames.includes(fullName);
+        let exists = true;
+        try {
+          await db.collection(fullName).count();
+        } catch (e) {
+          if (notExist(e)) exists = false; else throw e;
+        }
         check("data", `集合 ${fullName} 存在`, exists, `运行 node setup/init-collections.js`);
       }
 
-      // Note: Index checking requires more complex logic, skip for now
+      // node-sdk 不支持脚本建索引/查索引，需在控制台验证
       check("data", "索引检查", false, "手动在 TCB 控制台验证索引");
     } catch (error) {
       check("data", "集合检查失败", false, error.message);

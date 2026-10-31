@@ -45,12 +45,11 @@ async function main() {
   }
 
   console.log("初始化 TCB 连接...");
+  // @cloudbase/node-sdk 用 AK/SK 直连：env + secretId + secretKey（与 server/core/db.js 一致）
   const app = tcb.init({
-    envId: secrets.TCB_ENV,
-    credentials: {
-      private_key_id: secrets.TCB_SECRET_ID,
-      private_key: secrets.TCB_SECRET_KEY
-    }
+    env: secrets.TCB_ENV,
+    secretId: secrets.TCB_SECRET_ID,
+    secretKey: secrets.TCB_SECRET_KEY
   });
 
   const db = app.database();
@@ -106,11 +105,11 @@ async function main() {
           }
 
           const { _id: docId, ...docData } = record;
-          
-          // Use set() for idempotent upsert
-          await db.collection(fullCollectionName).doc(docId).set({
-            data: docData
-          });
+
+          // Use set() for idempotent upsert.
+          // 本地脚本直连 @cloudbase/node-sdk，set() 收「裸对象」，
+          // 不能包 {data}（那是 wx-server-sdk 约定，见 services/README 坑#5）。
+          await db.collection(fullCollectionName).doc(docId).set(docData);
 
           imported++;
         } catch (error) {
