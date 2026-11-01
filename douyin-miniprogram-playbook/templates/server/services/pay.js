@@ -1,5 +1,6 @@
-// 模板文件，零改动使用；业务值在 template.config.js 的 payment.products。
-// 默认可用的支付服务（兑现 spec §6.2/§6.3：createOrder/grant/激活码模板预置，业务只定制 products 表）。
+// 模板文件，零改动使用。默认可用的支付服务（createOrder/grant/激活码模板预置）。
+// 商品与价格以数据库 products 集合为准（对齐亲子仓：商品文档携带 priceFen/grant），
+// template.config.js 的 payment.products 仅作 seed 源与 DB 未灌数据时的兜底。
 //   action: createOrder / redeemActivationCode / syncOrderStatus
 // 导出 settleOrder / findOrderByTradeNo / onRefund 供 index.js 的
 //   /api/pay/notify、/api/pay/syncOrderStatus 注入（index.js 已有委托逻辑）。
@@ -14,6 +15,7 @@ const db = cloud.database();
 const P = config.collectionPrefix || "";
 const ORDERS = P + "orders";
 const ACTIVATIONS = P + "activation_codes";
+const PRODUCTS = P + "products";
 
 function openid() {
   return cloud.getWXContext().OPENID || "";
@@ -33,7 +35,17 @@ function products() {
   return (config.payment && config.payment.products) || [];
 }
 
-function findProduct(itemId) {
+// 商品解析：数据库 products 集合优先（价格/权益入库，免发版调价，对齐亲子仓）；
+// DB 未灌数据时回退 config.payment.products[]，保证模板开箱可用。
+async function findProduct(itemId) {
+  if (!itemId) return null;
+  try {
+    const res = await db.collection(PRODUCTS).where({ itemId, status: "online" }).limit(1).get();
+    const doc = (res && res.data && res.data[0]) || null;
+    if (doc) return Object.assign({ itemId }, doc);
+  } catch (_error) {
+    // 集合不存在/查询失败不抛，走 config 兜底
+  }
   return products().find((p) => p.itemId === itemId) || null;
 }
 
@@ -73,7 +85,7 @@ async function createOrder(event) {
   if (!uid) throw fail("缺少抖音用户身份", 401);
 
   const itemId = event.itemId;
-  const product = findProduct(itemId);
+  const product = await findProduct(itemId);
   if (!product) throw fail("商品 itemId 非法", 400);
 
   const [profile, pricing] = await Promise.all([grant.getProfile(uid), getPricing()]);
@@ -87,7 +99,7 @@ async function createOrder(event) {
       : grantType === "package"
       ? pricing.packagePriceFen
       : pricing.membershipPriceFen;
-  if (!(amountFen > 0)) throw fail("商品未配置价格（payment.products[].priceFen）", 400);
+  if (!(amountFen > 0)) throw fail("商品未配置价格（products 集合 priceFen 或 config.payment.products[]）", 400);
 
   // 进件未完成（tagGroup 缺失）时给配置级报错，说明代码链路已通、只差平台配置。
   const tagGroup = (config.payment && config.payment.tagGroup) || "";
@@ -161,9 +173,9 @@ async function createOrder(event) {
 }
 
 // 激活码兑换：where+update 原子抢占（countUpdated 判 1 防并发），grant 走 R2 分发器。
-function resolveActivationGrant(activation) {
+async function resolveActivationGrant(activation) {
   if (activation.grant) return activation.grant;
-  const product = activation.itemId ? findProduct(activation.itemId) : null;
+  const product = activation.itemId ? await findProduct(activation.itemId) : null;
   if (product) return product.grant || {};
   const list = products();
   if (list.length === 1) return list[0].grant || {};
@@ -195,7 +207,7 @@ async function redeemActivationCode(event) {
   if (payment.countUpdated(claim) !== 1) throw fail("激活码无效或已兑换", 400);
 
   const pricing = await getPricing();
-  const grantSpec = resolveActivationGrant(activation);
+  const grantSpec = await resolveActivationGrant(activation);
   await grant.grantEntitlement({
     openid: uid,
     outTradeNo: `ACTIVATION-${code}`,

@@ -41,13 +41,14 @@ scripts/                →  新项目的 scripts/
 | `appId` | 同上 | `tt` 开头 16 位 |
 | `collectionPrefix` | **★ 只改这一个，所有集合名由它拼出** | `myapp_` |
 | `payment.tagGroup` | 支付标签组 | `__UN_SHIFT_...` |
-| `payment.products` | 商品表（itemId / title / priceFen / grant.type） | 按业务填写 |
+| `payment.products` | 商品表 seed 源与 DB 兜底（itemId / title / priceFen / grant.type）；**运行时价格以 `{prefix}products` 集合为准** | 灌入 products 集合，改价免发版 |
 | `payment.orderEntryPath` | 支付回跳订单页路径 | 默认 `core/shell/orders/index` |
 | `membership.name` | 会员名称 | 自定义 |
 
 > **支付/客服模板默认可用**：`services/pay.js`、`core/grant.js`、`core/notify.js`、`services/config.js`
-> 与前端 `core/utils/pay.js`、`core/components/im-contact/` 已预置，业务只在 `payment.products` 表定制商品/价格/权益，
-> **无需在 services 补 createOrder / 激活码**。`collections` 已含 `activation_codes`、`app_config`。
+> 与前端 `core/utils/pay.js`、`core/shell/purchase/`、`core/components/im-contact/` 已预置，
+> 业务只灌 `{prefix}products` 集合（商品/价格/权益**存数据库**，改价免发版，`config.payment.products[]` 仅 seed/兜底）
+> 与 `activation_codes` 集合，**无需在 services 补 createOrder / 激活码 / 购买页**。`collections` 已含 `products`、`activation_codes`、`app_config`。
 
 **验收**：两个 config 文件中无 `{{` 残留占位符。
 

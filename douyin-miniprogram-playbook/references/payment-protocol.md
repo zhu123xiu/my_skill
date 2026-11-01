@@ -21,14 +21,20 @@
   → 失败/取消 → toast，订单保持 pending（靠 syncOrderStatus 兜底）
 ```
 
-- **价格服务端权威**：createOrder 金额取 `payment.products[].priceFen`（回退 `core/pricing.js`），
-  前端只展示、不传价、不做价格决策；`core/utils/pay.js` 不硬编码商品表。
+- **价格存数据库、服务端权威（对齐亲子仓）**：商品与价格以 `{prefix}products` 集合文档为准
+  （每条 `{_id, itemId, title, priceFen, grant, status:"online"}`），`createOrder` 的 `findProduct`
+  **DB 优先**、`config.payment.products[]` 仅作 seed 源与 DB 未灌数据时的兜底，再回退 `core/pricing.js`。
+  端上列表价取 `config` 服务 `getProducts`（同样 DB 优先、回退 config）。前端只展示、不传价、不做价格决策；
+  `core/utils/pay.js` 不硬编码商品表。**免发版调价 = 改 `products` 集合文档。**
+- **购买/兑换壳页**：`core/shell/purchase/index` 预置「列商品（DB 价）→ createOrder → requestPay →
+  syncOrderStatus 兜底」+「激活码输入 → redeemActivationCode」双通路，iOS 或支付不可用时走激活码；
+  业务侧把付费墙/入口 `navigateTo` 到该壳页即可，无需自写购买页。
 - **入账 config 驱动**：`grant.type` 三种（membership/package/all_courses）由 `core/grant.js` 预置分发，
   结算走 `where(outTradeNo, status=pending).update` 原子幂等（countUpdated!==1 直接返回 true）。
 - **订单入口对齐**：createOrder 返回的 `orderEntrySchema.path` 取自 `config.payment.orderEntryPath`，
   模板默认 `core/shell/orders/index`（订单壳页）。改业务订单页时同步改此配置，保证支付回跳落在正确页面。
 - **激活码**：`redeemActivationCode` 对 `{prefix}activation_codes` where+update 原子抢占
-  （countUpdated 判 1 防并发），grant 走同一分发器；iOS 拦截后引导此路径。
+  （countUpdated 判 1 防并发），grant 走同一分发器；`gen-seed` 可灌演示码，真实发放走运营/后台；iOS 拦截后引导此路径。
 
 ## 支付事件钉钉通知（可选，默认静默关闭）
 

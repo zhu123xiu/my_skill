@@ -35,12 +35,13 @@
 
 ---
 
-## 支付链路（模板默认可用，业务只定制 products 表）
+## 支付链路（模板默认可用，商品/价格灌 products 集合）
 
-- [ ] **createOrder dry-run**：`POST /api/pay {action:"createOrder", itemId:"<配置项>"}` 不再 501；未进件时给配置级 400「支付进件未完成（payment.tagGroup 未配置）」，说明代码链路已通
+- [ ] **价格入库**：`{prefix}products` 集合已灌（`gen-seed`/`import-data`），`config.payment.products[]` 仅 seed/兜底；改价走 DB 文档 `priceFen`，免发版
+- [ ] **createOrder dry-run**：`POST /api/pay {action:"createOrder", itemId:"<products 集合项>"}` 不再 501；未进件时给配置级 400「支付进件未完成（payment.tagGroup 未配置）」，说明代码链路已通
 - [ ] **回调验签**：`/api/pay/notify` 缺签名头 → `err_no:1 SIGN_*`；不崩溃；`settleOrder`/`findOrderByTradeNo` 已注入（index.js 委托不抛错）
 - [ ] **iOS 拦截**：iOS 真机 `canPurchase()` 返回 `allowed:false` 并引导激活码
-- [ ] **激活码兑换**：`redeemActivationCode` where+update 原子抢占，重复兑换 400、并发只入账一次（countUpdated 判 1）
+- [ ] **激活码兑换**：`redeemActivationCode` where+update 原子抢占，重复兑换 400、并发只入账一次（countUpdated 判 1）；壳页 `core/shell/purchase/` 输码入口可达
 - [ ] **端上调起**：`grep -rn "requestOrder" miniprogram/` 有命中；成功后 `entitlement-refresh` 起 2 分钟刷新窗口
 - [ ] **支付通知联测（可选）**：配 `DINGTALK_TOKEN`/`DINGTALK_SECRET` 后 dev 真实下单+支付 → 钉钉群收到 💳/💰 两张卡片且 💰 仅一条；退一笔 → 收到 ↩️ 卡片。**不配时链路行为与配置前完全一致（静默关闭）**
 

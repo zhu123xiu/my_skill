@@ -16,6 +16,7 @@ Page({
       return;
     }
     const routeMap = {
+      purchase: "/core/shell/purchase/index",
       orders: "/core/shell/orders/index",
       feedback: "/core/shell/feedback/index",
       about: "/core/shell/protocol/index",
