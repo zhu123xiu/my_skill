@@ -31,6 +31,8 @@ scripts/                →  新项目的 scripts/
 | `douyin.envIdProd` | 生产环境 ID | `env-` 开头 |
 | `douyin.resourceEnv` | 资源环境 ID | `cloudbase-` 开头 |
 | `douyin.serviceId` | 云服务 ID | 字符串 |
+| `contact.channel` | 客服通道：`byteHi`（首发）/ `im`（上线后切换） | 默认 `byteHi` |
+| `contact.imId` | IM 客服开通后回填（云库拉取失败兜底） | 空 |
 
 ### 服务端 `server/template.config.js`
 
@@ -39,8 +41,13 @@ scripts/                →  新项目的 scripts/
 | `appId` | 同上 | `tt` 开头 16 位 |
 | `collectionPrefix` | **★ 只改这一个，所有集合名由它拼出** | `myapp_` |
 | `payment.tagGroup` | 支付标签组 | `__UN_SHIFT_...` |
-| `payment.products` | 商品表（itemId / priceFen / grant） | 按业务填写 |
+| `payment.products` | 商品表（itemId / title / priceFen / grant.type） | 按业务填写 |
+| `payment.orderEntryPath` | 支付回跳订单页路径 | 默认 `core/shell/orders/index` |
 | `membership.name` | 会员名称 | 自定义 |
+
+> **支付/客服模板默认可用**：`services/pay.js`、`core/grant.js`、`core/notify.js`、`services/config.js`
+> 与前端 `core/utils/pay.js`、`core/components/im-contact/` 已预置，业务只在 `payment.products` 表定制商品/价格/权益，
+> **无需在 services 补 createOrder / 激活码**。`collections` 已含 `activation_codes`、`app_config`。
 
 **验收**：两个 config 文件中无 `{{` 残留占位符。
 

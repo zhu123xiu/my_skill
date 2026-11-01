@@ -1,1 +1,3 @@
 <view class="page"><text>{{appName}}</text></view>
+<!-- 首页悬浮客服（组件三形态之 float；通道走全局配置） -->
+<im-contact shape="float" text="客服" />

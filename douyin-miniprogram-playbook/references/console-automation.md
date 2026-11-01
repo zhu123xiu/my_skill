@@ -79,3 +79,15 @@
 - 弹窗/对话框出现时需要先处理才能继续操作
 - 网络请求可能较慢，设置合理的超时时间
 - 操作完成后截图留证（用于归档到 `~/subject-profile/05-其他平台回执/`）
+
+---
+
+## 9. git 部署绑定与发布的坑（服务设置→部署方式）
+
+- **表单字段**：git部署 表单只有「代码源 / 代码仓库 / 分支 / Dockerfile」四项，**没有独立的"代码目标目录"字段**。目标目录由 Dockerfile 里的 `COPY <子目录>/` 决定；Dockerfile 填 `./Dockerfile`（仓库根），构建上下文平台自动取仓库根。
+- **两个「保存」按钮**：部署方式 tab 里「模板部署」开关表单和「git部署」表单**各有一个保存按钮**。用文本/面板匹配保存按钮时极易点中模板部署那个——它只提交 `{deploy_model, run_cmd, action:"update_release_config"}`，**不含任何 git 字段**，导致 git 绑定看似保存（200）实则全空。务必点 git部署 面板（`#semiTabPanel1`）内的保存按钮。
+- **分支必须实际点选**：分支下拉默认显示的 `main` 只是占位显示，**不算选中**。不点选直接保存会触发 Semi Form 校验失败（`git_branch` invalid，提示「请选择分支」），且**不发任何网络请求**（静默失败）。必须展开分支下拉、真实点选 main 选项，让 formApi 写入 git_branch 后再保存。
+- **验证绑定是否真保存**：保存后调 `POST /api/service/service_detail`（body `{service_id}`）核对 `git_type/git_link/git_branch/docker_file_route` 是否非空。`update_config` 返回 200 不代表 git 字段已写入。
+- **Select 选项在 portal**：代码源/仓库/分支的下拉选项渲染在 portal，不在 accessibility tree；用 `evaluate` 查 `.semi-select-option` 文本匹配点击（参见 §2）。
+- **首次发布端口注入超时**：第一次「容器部署」可能失败，日志 `server listening on <默认端口>`＋`function start timed out (120s) … may not listen on *:8000`。原因是首部署时 `PORT` 环境变量未注入进程，服务落到代码默认端口（如 3000）而非平台要求的 8000。**重新发布一次**通常即恢复（PORT=8000 正常注入），代码无需改。Dockerfile 务必 `ENV PORT=8000`＋`EXPOSE 8000`，服务读 `process.env.PORT`。
+- **发布流程**：部署运行→前往发布→选代码（git部署/仓库/分支）→填**发布备注**（必填）→发布设置（外网出流量选「非固定公网IP」才能访问外网 TCB；内存 1G）→发布→确认差异弹窗「确定」。轮询 `POST /api/service/release_status`（body `{service_id, release_id}`）看 `release_status`（2=进行中，4=失败）与 `release_log` 定位错误。

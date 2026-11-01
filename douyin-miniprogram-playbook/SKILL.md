@@ -98,7 +98,7 @@ Build, migrate, test, launch, and promote a Douyin mini app from a reusable temp
 
 1. **「我要新开发一个抖音小程序」**→ 主流程：要控制台链接（或仅 appId）→ AI 在 ~/subject-profile/ 自建主体资料包 → 发起阶段 → 并行开发 → 收割 → 提审门禁。参考 `templates/docs/product-spec.md`、`references/value-map.md`、`references/platform-tasks.md`、setup 脚本。
 2. **「我要从微信搬代码到抖音」**→ `templates/server/core/wx-compat.js` 使用说明 + 整文件搬运原则 + `references/node-sdk-pitfalls.md`。
-3. **「我要接支付」**→ `references/payment-protocol.md` + 支付模板说明 + 进件/MCC 注意事项 + `setup/doctor.js` 支付分组。
+3. **「我要接支付」**→ `references/payment-protocol.md`（含端上购买链路范式）+ 模板 `services/pay.js`/`core/grant.js`/`core/notify.js`/前端 `core/utils/pay.js`（默认可用，业务只定制 products 表）+ 进件/MCC 注意事项 + `setup/doctor.js` 支付分组。
 4. **「环境/流量不对」**（prod 没流量、10401、envType 路由）→ `templates/miniprogram/core/config/cloud.js` 注释（getEnvInfoSync 环境路由）+ `checklists/launch-checklist.md` 部署铁律。判断流量去向要**双环境日志对照**。
 5. **「我要退款 / 处理售后」**→ `references/payment-protocol.md` 退款节 + `scripts/refund-order.js` 运维脚本模板。
 6. **「我要提审上线」**→ `checklists/launch-checklist.md`。
@@ -115,6 +115,23 @@ Build, migrate, test, launch, and promote a Douyin mini app from a reusable temp
 3. Edit only the two config files and create `setup/.secrets.local.json` from its example.
 4. Run the setup scripts in this order: `doctor.js`, `setup-secrets.js`, `init-collections.js`, and `import-data.js` when seed data is ready.
 5. Run `scripts/e2e-smoke.js` with a mock database before real credentials are available.
+
+---
+
+## 支付与客服能力（模板默认可用，业务零编码）
+
+模板已把支付链路与客服接入预置为**默认可用**，业务只在 `payment.products` 表定制商品/价格/权益，无需在 services 里补 createOrder/激活码：
+
+| 能力 | 模板文件 | 说明 |
+|------|----------|------|
+| 下单/兑换/结算/查单 | `server/services/pay.js` | `exports.main` 路由 createOrder / redeemActivationCode / syncOrderStatus；导出 `settleOrder`/`findOrderByTradeNo`/`onRefund` 供 index.js 注入 |
+| 权益入账分发 | `server/core/grant.js` | 三种 `grant.type`（membership/package/all_courses）预置；settle 金额二次校验 + pending→paid 原子幂等 |
+| 支付事件钉钉通知 | `server/core/notify.js` | 💳/💰/↩️ 三挂点 fire-and-forget；不配 `DINGTALK_TOKEN`/`DINGTALK_SECRET` 静默关闭 |
+| 端上支付调起 | `miniprogram/core/utils/pay.js` | `requestPay`/`canPurchase`（iOS 拦截）/`getPaymentEnv`；商品表不硬编码，价格以服务端为准 |
+| 全局配置拉取 | `server/services/config.js` | `getGlobal` 读 `{prefix}app_config/global`，客服通道/imId 云库切换不提审 |
+| 客服组件三形态 | `miniprogram/core/components/im-contact/` | float/menu-row/button + byteHi↔im 通道可切换，统一降级 handler |
+
+口径统一：**createOrder、激活码、grant 由模板预置（非「消费方实现」）**；业务只填 products。购买链路范式见 `references/payment-protocol.md`。
 
 ---
 
@@ -164,3 +181,5 @@ Before committing, verify:
 8. 含 `templates/docs/product-spec.md` 模板，且 SKILL.md 明确要求"需求先落规格书再动代码"。
 9. 扫描 `{{` 占位符残留、真实凭据、TODO 临时改动。
 10. `core/` 代码未被修改。
+11. **不配 DINGTALK 环境变量时，支付/退款/权益链路行为与配置前完全一致**（notify 静默 return）；`grep -rn "DINGTALK\|access_token\|SEC" templates/` 确认密钥值不出现在任何文件正文（只允许出现环境变量名/字段名）。
+12. 支付与客服模板默认可用：`services/pay.js`、`core/grant.js`、`core/notify.js`、前端 `core/utils/pay.js`、`services/config.js`、`core/components/im-contact/` 齐备，`grep -rn "requestOrder" templates/miniprogram/` 有命中。

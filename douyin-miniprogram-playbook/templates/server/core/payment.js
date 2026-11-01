@@ -316,7 +316,7 @@ function mapApiError(error) {
  * The actual settle/entitlement logic is business-specific and must be
  * provided by the consuming service via callbacks.
  */
-async function payNotifyHandler(request, response, { settleOrder, findOrderByTradeNo }) {
+async function payNotifyHandler(request, response, { settleOrder, findOrderByTradeNo, onRefund }) {
   const successResponse = () =>
     response.status(200).json({ err_no: 0, err_tips: "success" });
   const failureResponse = (message) =>
@@ -357,7 +357,16 @@ async function payNotifyHandler(request, response, { settleOrder, findOrderByTra
   }
 
   // Non-payment messages (refund, settlement) are acknowledged idempotently.
-  if (request.body.type !== "payment") return successResponse();
+  // core 只留注入点：refund 通知由消费方 services/pay.js 通过 onRefund 传入，
+  // core 不依赖任何 webhook/通知实现。
+  if (request.body.type !== "payment") {
+    if (request.body.type === "refund" && typeof onRefund === "function") {
+      try {
+        onRefund(message, request.body);
+      } catch (_error) {}
+    }
+    return successResponse();
+  }
   if (message.status !== "SUCCESS") return successResponse();
 
   // --- Order lookup ---

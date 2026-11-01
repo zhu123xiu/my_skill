@@ -1,112 +1,94 @@
-# 客服接入包
+# 客服接入包（已实装组件）
 
-> 交易类小程序提审硬性要求。三种形态 + 双通道支持。
+> 交易类小程序提审硬性要求。组件 `core/components/im-contact/` 已落地：三形态 + 双通道可切换。
+
+---
+
+## 用法
+
+页面 json 注册：
+
+```json
+{ "usingComponents": { "im-contact": "../../components/im-contact/index" } }
+```
+
+（路径按页面深度调整：壳页 `../../components/...`，business 页 `../../../core/components/...`）
+
+wxml 按形态引用，**通道属性留空走全局配置**：
+
+```xml
+<im-contact shape="float" text="客服" />        <!-- 首页悬浮 -->
+<im-contact shape="menu-row" />                  <!-- 我的页菜单行 -->
+<im-contact shape="button" text="申请售后" />    <!-- 订单页内嵌按钮 -->
+```
+
+### props
+
+| prop | 说明 | 缺省 |
+|------|------|------|
+| `channel` | `"byteHi"` \| `"im"` | 读 `globalData.contact.channel` → `template.config.contact.channel` |
+| `imId` | channel=im 时生效 | 读 `globalData.imId` → `contact.imId` → `config.imId` |
+| `shape` | `"float"` \| `"menu-row"` \| `"button"` | `"button"` |
+| `text` | 按钮文案（menu-row 形态为标题） | `"联系客服"` |
+| `desc` | menu-row 形态描述行 | `"咨询与售后问题，点此即时沟通"` |
 
 ---
 
 ## 双通道模式
 
-### byteHi（飞鸽客服）
+### byteHi（飞鸽客服）—— ★ 首发默认
 
 ```xml
-<button open-type="byteHi">联系客服</button>
+<button open-type="byteHi" bindbytehi="onContact">联系客服</button>
 ```
 
-- 平台托管的客服通道
-- 用户在抖音内直接发起对话
-- 客服在飞鸽工作台接待
+- 平台托管，**无需 imId、无接待端在线要求**
+- 用户在抖音内直接发起对话，客服在飞鸽工作台接待
 
-### IM 客服
+### IM 客服 —— 上线后切换
 
 ```xml
 <button open-type="im" data-im-id="{{imId}}" bindim="onContact">联系客服</button>
 ```
 
-- 需要绑客服主管抖音号
-- 在「抖音客服服务平台」设「在线」状态（不在线则用户消息不投递）
-- imId 走「云库配置表 + 代码默认值兜底」模式（改号不提审）
+- 需绑客服主管抖音号
+- 必须在「抖音客服服务平台」(life-im.douyin.com) 设「在线」，否则用户消息不投递
+- imId 走「云库配置 + 代码兜底」（改号不提审）
+
+### 统一降级 handler
+
+两种通道共用 `onContact`：回调 `errNo ≠ 0` → modal 引导「意见反馈」页（`core/shell/feedback`）。
 
 ---
 
-## 三种形态
+## 通道/imId 云库配置 + 代码兜底（不提审切换）
 
-### 1. 悬浮按钮（fixed 定位）
-
-适合首页。固定在右下角，用户随时可点击。
-
-```xml
-<view class="im-float-btn">
-  <button open-type="im" data-im-id="{{imId}}" bindim="onContact">
-    客服
-  </button>
-</view>
-```
-
-### 2. 菜单行（透明 button 覆盖整行）
-
-适合「我的」页。整行可点击，透明 button 覆盖 hack。
-
-```xml
-<view class="menu-item menu-item--im">
-  <button class="menu-item__im-btn" open-type="im" data-im-id="{{imId}}" bindim="onContact"></button>
-  <view class="menu-item__icon">客</view>
-  <view class="menu-item__text">联系客服</view>
-  <view class="chevron">›</view>
-</view>
-```
-
-### 3. 统一降级 handler
-
-客服不可用时降级到意见反馈。
+1. `template.config.js` 前端配置：
 
 ```js
-onContact(event) {
-  const detail = (event && event.detail) || {};
-  if (detail.errNo === undefined || Number(detail.errNo) === 0) {
-    return; // 正常打开客服
-  }
-  // 降级：引导到意见反馈
-  wx.showModal({
-    title: "客服暂不可用",
-    content: "请通过「意见反馈」留言，我们会尽快处理。",
-    showCancel: false,
-    confirmText: "去反馈",
-    success: () => this.openFeedback(),
-  });
-}
+contact: { channel: "byteHi", imId: "" },  // 首发飞鸽；上线后改 "im"
+```
+
+2. `app.js onLaunch` → `fetchGlobalConfig()` 调服务端 `config` 服务（`getGlobal`），
+   读 `{prefix}app_config` 的 `global` 文档的 `contact.channel` / `contact.imId`，
+   拉到则覆盖 `globalData.contact` / `globalData.imId`，失败静默用 config 兜底。
+3. 组件 `attached` / 页面 `show` 时重新解析通道——**云库改 imId/通道，端上无需重启即可生效，不提审**。
+
+服务端 `app_config/global` 文档示例：
+
+```json
+{ "contact": { "channel": "im", "imId": "客服主管抖音号" } }
 ```
 
 ---
 
-## 三入口布局建议
+## 三入口布局
 
 | 入口 | 位置 | 形态 |
 |------|------|------|
-| 首页悬浮 | 右下角 fixed | 悬浮按钮 |
-| 我的页菜单 | 菜单列表中 | 菜单行 |
-| 订单页售后 | 订单卡片内 | 申请售后按钮 |
-
----
-
-## imId 配置
-
-采用「云库配置表 + 代码默认值兜底」模式：
-
-1. 代码中写一个默认 imId（template.config.js 或 globalData）
-2. 启动时从云端配置表拉取最新 imId
-3. 拉取成功则更新，失败则用默认值
-4. 好处：改客服号不需要提审
-
-```js
-// app.js onLaunch
-initCloud().then(() => {
-  fetchGlobalConfig().then((config) => {
-    if (config && config.imId) {
-      this.globalData.imId = config.imId;
-    }
-  }).catch(() => {});
-});
-```
+| 首页悬浮 | 右下角 fixed | `float` |
+| 我的页菜单 | 菜单列表中 | `menu-row` |
+| 订单页售后 | 订单卡片内 | `button` |
 
 ---
 

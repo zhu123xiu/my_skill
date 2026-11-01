@@ -22,20 +22,7 @@
       </view>
     </block>
 
-    <!-- IM customer service entry (always shown) -->
-    <view class="menu-item menu-item--im">
-      <button
-        class="menu-item__im-btn"
-        open-type="im"
-        data-im-id="{{imId}}"
-        bindim="onByteHiContact"
-      ></button>
-      <view class="menu-item__icon menu-item__icon--service">客</view>
-      <view class="menu-item__text">
-        <view class="menu-item__title">联系客服</view>
-        <view class="menu-item__desc">咨询与售后问题，点此即时沟通</view>
-      </view>
-      <view class="chevron">›</view>
-    </view>
+    <!-- 客服入口（组件三形态之菜单行；通道走全局配置，byteHi 首发 / im 上线后切换） -->
+    <im-contact shape="menu-row" />
   </view>
 </view>

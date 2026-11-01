@@ -1,0 +1,42 @@
+<!-- 客服组件三形态。通道 effChannel=im 走 open-type="im"，否则 byteHi（飞鸽，平台托管）。 -->
+<!-- 形态 1：首页悬浮按钮 -->
+<view wx:if="{{shape === 'float'}}" class="imc-float">
+  <button
+    wx:if="{{effChannel === 'im'}}"
+    class="imc-float__btn"
+    open-type="im"
+    data-im-id="{{effImId}}"
+    bindim="onContact"
+  >{{text}}</button>
+  <button wx:else class="imc-float__btn" open-type="byteHi" bindbytehi="onContact">{{text}}</button>
+</view>
+
+<!-- 形态 2：菜单行（透明 button 覆盖整行） -->
+<view wx:elif="{{shape === 'menu-row'}}" class="imc-menu">
+  <button
+    wx:if="{{effChannel === 'im'}}"
+    class="imc-menu__btn"
+    open-type="im"
+    data-im-id="{{effImId}}"
+    bindim="onContact"
+  ></button>
+  <button wx:else class="imc-menu__btn" open-type="byteHi" bindbytehi="onContact"></button>
+  <view class="imc-menu__icon">客</view>
+  <view class="imc-menu__text">
+    <view class="imc-menu__title">{{text}}</view>
+    <view wx:if="{{desc}}" class="imc-menu__desc">{{desc}}</view>
+  </view>
+  <view class="imc-menu__chevron">›</view>
+</view>
+
+<!-- 形态 3：内嵌按钮（订单售后等） -->
+<block wx:else>
+  <button
+    wx:if="{{effChannel === 'im'}}"
+    class="imc-btn"
+    open-type="im"
+    data-im-id="{{effImId}}"
+    bindim="onContact"
+  >{{text}}</button>
+  <button wx:else class="imc-btn" open-type="byteHi" bindbytehi="onContact">{{text}}</button>
+</block>

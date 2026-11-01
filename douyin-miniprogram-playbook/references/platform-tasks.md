@@ -104,6 +104,12 @@
 - 无消息推送 webhook，桥接外部 IM 只能走 byteHi「消息推送客服」板块
 - 预览/体验版对客服按钮有平台侧限制
 
+**byteHi vs IM 接待端差异（通道策略，2026-10-31 拍板）**：
+- **byteHi（飞鸽客服）= 首发默认**：平台托管，**无需 imId、无接待端在线要求**，开通即用；组件渲染 `open-type="byteHi"`
+- **IM 客服 = 上线后切换**：必须 life-im.douyin.com 工作台设「在线」，否则用户消息不投递；组件渲染 `open-type="im" data-im-id`
+- 组件 `core/components/im-contact/` 三形态全实装，通道由 `template.config.contact.channel` + 云库 `app_config/global` 覆盖，**换通道/换号不提审、不改 wxml**
+- 提审期间客服在线纪律不变（无论哪种通道，审核员都会验证客服会话可达）
+
 ## 7. 企业机构账号创建
 
 - **入口**：运营 → 机构账号管理

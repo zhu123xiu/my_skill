@@ -1,0 +1,106 @@
+/* 客服组件三形态样式（自包含，浅色中性，兼容壳页菜单/订单视觉）。 */
+
+/* 形态 1：首页悬浮按钮 */
+.imc-float {
+  position: fixed;
+  right: 28rpx;
+  bottom: 60rpx;
+  z-index: 50;
+}
+
+.imc-float__btn {
+  min-width: 96rpx;
+  height: 96rpx;
+  padding: 0 22rpx;
+  border-radius: 48rpx;
+  background: #45b8a6;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 700;
+  line-height: 96rpx;
+  box-shadow: 0 6rpx 20rpx rgba(69, 184, 166, 0.35);
+}
+
+.imc-float__btn::after {
+  border: none;
+}
+
+/* 形态 2：菜单行（透明 button 覆盖整行 hack） */
+.imc-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 24rpx 28rpx;
+}
+
+.imc-menu__btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  line-height: normal;
+  z-index: 2;
+}
+
+.imc-menu__btn::after {
+  border: none;
+}
+
+.imc-menu__icon {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 22rpx;
+  background: #e0a998;
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.imc-menu__text {
+  flex: 1;
+}
+
+.imc-menu__title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.imc-menu__desc {
+  margin-top: 10rpx;
+  color: #999;
+  font-size: 22rpx;
+}
+
+.imc-menu__chevron {
+  color: #ccc;
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+/* 形态 3：内嵌按钮（订单售后等） */
+.imc-btn {
+  min-width: 136rpx;
+  height: 58rpx;
+  padding: 0 18rpx;
+  border: 2rpx solid #ccc;
+  border-radius: 18rpx;
+  background: #fff;
+  color: #666;
+  font-size: 23rpx;
+  line-height: 54rpx;
+}
+
+.imc-btn::after {
+  border: none;
+}

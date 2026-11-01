@@ -183,6 +183,7 @@ app.post("/api/pay/notify", async (request, response) => {
   // Load business-specific callbacks if a pay service exists.
   let settleOrder = async () => true;
   let findOrderByTradeNo = async () => null;
+  let onRefund = null;
   const payService = loadService("pay");
   if (payService && typeof payService.settleOrder === "function") {
     settleOrder = payService.settleOrder;
@@ -190,10 +191,14 @@ app.post("/api/pay/notify", async (request, response) => {
   if (payService && typeof payService.findOrderByTradeNo === "function") {
     findOrderByTradeNo = payService.findOrderByTradeNo;
   }
+  if (payService && typeof payService.onRefund === "function") {
+    onRefund = payService.onRefund;
+  }
   try {
     await payment.payNotifyHandler(request, response, {
       settleOrder,
       findOrderByTradeNo,
+      onRefund,
     });
   } catch (error) {
     console.error("[payNotify] error:", error.message);

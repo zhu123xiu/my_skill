@@ -1,1 +1,5 @@
-{}
+{
+  "usingComponents": {
+    "im-contact": "../../../core/components/im-contact/index"
+  }
+}

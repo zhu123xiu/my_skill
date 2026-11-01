@@ -8,3 +8,35 @@
 - Keep PEM keys and salts in the prefixed `platform_secrets` collection, never in environment variables or source control.
 - For refunds, first call `order_query` to obtain the `motb...` transaction order id. The `MECPN...` value shown in some console lists is a payment id and cannot be sent as `order_id`.
 - Send `item_order_detail` with the returned item order id and refund amount. `refund_reason` is an integer enum (101, 102, 103, or 999), not a string. The endpoint is `refund_query/`, and the response is an accepted request that must be polled or confirmed by callback.
+
+## 端上购买链路范式
+
+模板已预置服务端 `services/pay.js`（createOrder/redeemActivationCode/settleOrder/findOrderByTradeNo）
+与前端 `core/utils/pay.js`（requestPay/canPurchase/getPaymentEnv），业务零编码即可走通：
+
+```
+业务页 → canPurchase() 拦截（iOS 引导激活码）
+  → core/utils/pay.js requestPay(await api('pay', { action:'createOrder', itemId }))
+  → 成功 → entitlement-refresh.js 启动 2 分钟权益刷新窗口 → 刷新页面权益态
+  → 失败/取消 → toast，订单保持 pending（靠 syncOrderStatus 兜底）
+```
+
+- **价格服务端权威**：createOrder 金额取 `payment.products[].priceFen`（回退 `core/pricing.js`），
+  前端只展示、不传价、不做价格决策；`core/utils/pay.js` 不硬编码商品表。
+- **入账 config 驱动**：`grant.type` 三种（membership/package/all_courses）由 `core/grant.js` 预置分发，
+  结算走 `where(outTradeNo, status=pending).update` 原子幂等（countUpdated!==1 直接返回 true）。
+- **订单入口对齐**：createOrder 返回的 `orderEntrySchema.path` 取自 `config.payment.orderEntryPath`，
+  模板默认 `core/shell/orders/index`（订单壳页）。改业务订单页时同步改此配置，保证支付回跳落在正确页面。
+- **激活码**：`redeemActivationCode` 对 `{prefix}activation_codes` where+update 原子抢占
+  （countUpdated 判 1 防并发），grant 走同一分发器；iOS 拦截后引导此路径。
+
+## 支付事件钉钉通知（可选，默认静默关闭）
+
+`core/notify.js` 预置 `notifyDingTalk`，三个挂点 fire-and-forget：
+💳 用户发起支付（createOrder 落库后）、💰 支付成功（首次 settle 入账后，幂等只发一条）、
+↩️ 退款成功（payNotify `type==="refund"` 分支，core 只留 `onRefund` 注入点，由 services/pay.js 传入）。
+
+- 仅当容器环境变量 `DINGTALK_TOKEN` / `DINGTALK_SECRET` 都配置时启用；任一缺失整体静默关闭，
+  **支付/退款/权益链路行为与配置前完全一致**。
+- 发送失败绝不重试、绝不阻塞、绝不抛出——支付可用性优先于通知可达性。
+- 密钥只走容器环境变量，严禁入码/入库/入文档正文/入 git 历史；泄露处置 = 机器人「重置」后更新环境变量。

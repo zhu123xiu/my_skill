@@ -33,12 +33,7 @@
       <view class="order-card__meta">下单时间：{{item.createdAtText}}</view>
       <view class="order-card__bottom">
         <view class="order-card__price">¥{{item.displayPrice}}</view>
-        <button
-          class="order-card__after-sale"
-          open-type="im"
-          data-im-id="{{imId}}"
-          bindim="onByteHiContact"
-        >申请售后</button>
+        <im-contact shape="button" text="申请售后" />
       </view>
     </view>
   </view>

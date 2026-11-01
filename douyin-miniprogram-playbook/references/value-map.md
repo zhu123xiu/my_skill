@@ -17,5 +17,6 @@
 | L1 | settlement account | Payment onboarding detail drawer | digits | `subjectProfile` | Settlement |
 | L3 | identity images | User supplies them; platform does not return them | jpg/png | `~/subject-profile/02-法人证件/` | Verification |
 | L0 | products/prices | Product-spec discussion | config objects | server config | Payment tests |
+| L3 | DINGTALK_TOKEN / DINGTALK_SECRET | 用户本人钉钉 App：建群 → 群设置 → 机器人 → 添加「自定义」→ 安全设置必须选「加签」→ 复制 webhook 中的 access_token 与 SEC 开头密钥 | token / `SEC...` | 抖音云控制台 dev/prod 容器「服务设置 → 环境变量」各配一份（**不走 platform_secrets 集合**，与 TCB 密钥同级按容器环境变量处理） | 支付通知（可选，不配则静默关闭） |
 
 Never ask for a value that an authorized platform session can safely retrieve. Never download material outside `~/subject-profile/`.

@@ -118,3 +118,17 @@ All scripts require:
 ## Directory Created
 
 - `/Users/zzz/Downloads/person_code/my_skill/douyin-miniprogram-playbook/setup/data/` (empty, ready for data files)
+
+## 支付与客服模板文件（默认可用，业务零编码）
+
+服务端（`templates/server/`）：
+- `services/pay.js` — createOrder / redeemActivationCode / syncOrderStatus 路由；导出 settleOrder / findOrderByTradeNo / onRefund
+- `core/grant.js` — 三种 grant.type 入账分发器 + settlePaidOrder 原子幂等骨架
+- `core/notify.js` — 钉钉通知（notifyDingTalk / fenToYuan / nowText），不配环境变量则静默关闭
+- `services/config.js` — getGlobal 读 `{prefix}app_config/global`，客服通道/imId 云库切换
+
+前端（`templates/miniprogram/`）：
+- `core/utils/pay.js` — requestPay / canPurchase（iOS 拦截）/ getPaymentEnv
+- `core/components/im-contact/` — 客服组件三形态 + byteHi↔im 通道可切换（index.js/json/wxml/wxss）
+
+`template.config.js` collections 已含 `activation_codes`、`app_config`。

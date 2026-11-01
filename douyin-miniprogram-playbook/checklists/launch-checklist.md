@@ -26,9 +26,23 @@
   - doc 不存在不抛错
   - `doc().update()` 对不存在文档静默 no-op
 - [ ] **e2e 冒烟通过**：`node scripts/e2e-smoke.js` 全 PASS
-- [ ] **涉及交易必接客服**（byteHi 或 IM 客服）
+- [ ] **涉及交易必接客服**（走 `core/components/im-contact/` 组件，byteHi 首发 / IM 上线后切换）
   - 提审期间客服账号保持在线（审核员会验证）
-  - IM 客服需绑客服主管抖音号并在客服服务平台设「在线」
+  - IM 客服需绑客服主管抖音号并在抖音客服服务平台（life-im.douyin.com）设「在线」，否则消息不投递；byteHi 平台托管无在线要求
+  - **三形态真机点开**：首页悬浮、我的页菜单行、订单页售后按钮均可拉起客服
+  - **降级 modal**：客服未开通时 `errNo≠0` → 引导「意见反馈」
+  - **云库切换不提审**：改 `app_config/global` 的 `contact.channel`/`imId` 后端上生效、无需改 wxml、无需重启
+
+---
+
+## 支付链路（模板默认可用，业务只定制 products 表）
+
+- [ ] **createOrder dry-run**：`POST /api/pay {action:"createOrder", itemId:"<配置项>"}` 不再 501；未进件时给配置级 400「支付进件未完成（payment.tagGroup 未配置）」，说明代码链路已通
+- [ ] **回调验签**：`/api/pay/notify` 缺签名头 → `err_no:1 SIGN_*`；不崩溃；`settleOrder`/`findOrderByTradeNo` 已注入（index.js 委托不抛错）
+- [ ] **iOS 拦截**：iOS 真机 `canPurchase()` 返回 `allowed:false` 并引导激活码
+- [ ] **激活码兑换**：`redeemActivationCode` where+update 原子抢占，重复兑换 400、并发只入账一次（countUpdated 判 1）
+- [ ] **端上调起**：`grep -rn "requestOrder" miniprogram/` 有命中；成功后 `entitlement-refresh` 起 2 分钟刷新窗口
+- [ ] **支付通知联测（可选）**：配 `DINGTALK_TOKEN`/`DINGTALK_SECRET` 后 dev 真实下单+支付 → 钉钉群收到 💳/💰 两张卡片且 💰 仅一条；退一笔 → 收到 ↩️ 卡片。**不配时链路行为与配置前完全一致（静默关闭）**
 
 ---
 

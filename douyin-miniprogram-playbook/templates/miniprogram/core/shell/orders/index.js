@@ -1,4 +1,3 @@
-const config = require("../../../template.config");
 const { callFunction } = require("../../utils/cloud");
 
 function formatPriceFen(priceFen) {
@@ -39,11 +38,9 @@ Page({
     orders: [],
     loading: true,
     errorMessage: "",
-    imId: config.imId || "",
   },
 
   onLoad() {
-    this.setData({ imId: config.imId || "" });
     this.loadPage();
   },
 
@@ -62,16 +59,5 @@ Page({
         this.setData({ errorMessage: error.message || "订单加载失败，请稍后重试" });
       })
       .finally(() => this.setData({ loading: false }));
-  },
-
-  onByteHiContact(event) {
-    const detail = (event && event.detail) || {};
-    if (detail.errNo === undefined || Number(detail.errNo) === 0) return;
-    wx.showModal({
-      title: "客服暂不可用",
-      content: "请通过「意见反馈」留言，我们会尽快处理。",
-      showCancel: false,
-      confirmText: "知道了",
-    });
   },
 });
