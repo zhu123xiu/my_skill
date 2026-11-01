@@ -124,7 +124,7 @@ Build, migrate, test, launch, and promote a Douyin mini app from a reusable temp
 
 | 能力 | 模板文件 | 说明 |
 |------|----------|------|
-| 下单/兑换/结算/查单 | `server/services/pay.js` | `exports.main` 路由 createOrder / redeemActivationCode / syncOrderStatus；`findProduct` **DB 优先**（`{prefix}products` 集合），config.products 仅 seed/兜底；导出 `settleOrder`/`findOrderByTradeNo`/`onRefund` 供 index.js 注入 |
+| 下单/兑换/结算/查单 | `server/services/pay.js` | `exports.main` 路由 createOrder / redeemActivationCode / syncOrderStatus；`findProduct` **DB 优先**（`{prefix}products` 集合），config.products 仅 seed/兜底；进件产出的 `tagGroup` 从 `loadDySecret()`（`dy_payment` 文档）读取，**不在仓库配置**；导出 `settleOrder`/`findOrderByTradeNo`/`onRefund` 供 index.js 注入 |
 | 权益入账分发 | `server/core/grant.js` | 三种 `grant.type`（membership/package/all_courses）预置；settle 金额二次校验 + pending→paid 原子幂等 |
 | 支付事件钉钉通知 | `server/core/notify.js` | 💳/💰/↩️ 三挂点 fire-and-forget；不配 `DINGTALK_TOKEN`/`DINGTALK_SECRET` 静默关闭 |
 | 端上支付调起 | `miniprogram/core/utils/pay.js` | `requestPay`/`canPurchase`（iOS 拦截）/`getPaymentEnv`；商品表不硬编码，价格以服务端为准 |
@@ -132,7 +132,7 @@ Build, migrate, test, launch, and promote a Douyin mini app from a reusable temp
 | 全局配置/商品拉取 | `server/services/config.js` | `getGlobal` 读 `{prefix}app_config/global`（客服通道/imId 云库切换不提审）；`getProducts` 读 `{prefix}products`（DB 优先、回退 config） |
 | 客服组件三形态 | `miniprogram/core/components/im-contact/` | float/menu-row/button + byteHi↔im 通道可切换，统一降级 handler |
 
-口径统一：**createOrder、激活码、grant 由模板预置（非「消费方实现」）**；**商品与价格存数据库 `products` 集合**（对齐亲子仓，改价免发版），`config.payment.products[]` 仅作 seed 源与兜底。购买链路范式见 `references/payment-protocol.md`。
+口径统一：**createOrder、激活码、grant 由模板预置（非「消费方实现」）**；**商品与价格存数据库 `products` 集合**（对齐亲子仓，改价免发版），`config.payment.products[]` 仅作 seed 源与兜底；**进件产出值（`tagGroup` + RSA 密钥）存数据库 `dy_payment` 文档，仓库 `template.config.js` 不放 `tagGroup`/`productCode`，进件后只灌 DB + 重启容器、零仓库改动**。购买链路范式见 `references/payment-protocol.md`。
 
 ---
 

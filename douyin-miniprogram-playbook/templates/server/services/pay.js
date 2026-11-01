@@ -101,9 +101,13 @@ async function createOrder(event) {
       : pricing.membershipPriceFen;
   if (!(amountFen > 0)) throw fail("商品未配置价格（products 集合 priceFen 或 config.payment.products[]）", 400);
 
-  // 进件未完成（tagGroup 缺失）时给配置级报错，说明代码链路已通、只差平台配置。
-  const tagGroup = (config.payment && config.payment.tagGroup) || "";
-  if (!tagGroup) throw fail("支付进件未完成（payment.tagGroup 未配置）", 400);
+  // 标签组 ID 是进件产出值（平台分配，与 RSA 私钥同类），以 DB dy_payment 文档为准；
+  // 仓库 payment 表仅作本地联调兜底。载入密钥：文档缺失视同未进件，
+  // 交由下方校验给出干净的配置级 400（而非"无法签名"崩溃）。
+  let secret = {};
+  try { secret = await payment.loadDySecret(); } catch (_e) { secret = {}; }
+  const tagGroup = secret.tagGroup || (config.payment && config.payment.tagGroup) || "";
+  if (!tagGroup) throw fail("支付进件未完成（dy_payment.tagGroup 未配置）", 400);
 
   const outTradeNo = `DY${Date.now()}${Math.floor(Math.random() * 1000000)
     .toString()
@@ -137,7 +141,7 @@ async function createOrder(event) {
   );
 
   // 组装 skuParams（spec §6.2 源实现），签名走 core/payment.js。
-  const secret = await payment.loadDySecret();
+  // secret（appId/appSecret/privateKeyPem/keyVersion + tagGroup）已在进件校验处载入，此处直接复用。
   const skuParams = {
     skuList: [
       {

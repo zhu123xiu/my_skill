@@ -4,8 +4,8 @@ module.exports = {
   collectionPrefix: "xxx_",
   envId: process.env.TCB_ENV,
   payment: {
-    tagGroup: "{{TAG_GROUP}}",
-    productCode: "",
+    // 平台进件产出的标签组 ID 不放仓库：写入 DB {prefix}platform_secrets 的 dy_payment 文档，
+    // 由 services/pay.js createOrder 从密钥文档读取，进件后零仓库改动。
     // 商品表：价格/权益以数据库 {prefix}products 集合为准（对齐亲子仓，免发版调价）。
     // 此数组仅作 seed 源与 DB 未灌数据时的兜底；每项：
     //   { itemId, title, priceFen, grant, productId?, image?, goodsType?, tagGroupId? }

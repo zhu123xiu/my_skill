@@ -38,12 +38,20 @@
 ## 支付链路（模板默认可用，商品/价格灌 products 集合）
 
 - [ ] **价格入库**：`{prefix}products` 集合已灌（`gen-seed`/`import-data`），`config.payment.products[]` 仅 seed/兜底；改价走 DB 文档 `priceFen`，免发版
-- [ ] **createOrder dry-run**：`POST /api/pay {action:"createOrder", itemId:"<products 集合项>"}` 不再 501；未进件时给配置级 400「支付进件未完成（payment.tagGroup 未配置）」，说明代码链路已通
+- [ ] **createOrder dry-run**：`POST /api/pay {action:"createOrder", itemId:"<products 集合项>"}` 不再 501；未进件时给配置级 400「支付进件未完成（dy_payment.tagGroup 未配置）」，说明代码链路已通（`dy_payment` 文档缺失或无 `tagGroup` 均给此 400，不崩"无法签名"）
+- [ ] **进件产出值入库**：`tagGroup` 不在仓库，写入 `{prefix}platform_secrets` 的 `dy_payment` 文档；进件后按下方 SOP 操作，**零仓库改动、零重新构建**
 - [ ] **回调验签**：`/api/pay/notify` 缺签名头 → `err_no:1 SIGN_*`；不崩溃；`settleOrder`/`findOrderByTradeNo` 已注入（index.js 委托不抛错）
 - [ ] **iOS 拦截**：iOS 真机 `canPurchase()` 返回 `allowed:false` 并引导激活码
 - [ ] **激活码兑换**：`redeemActivationCode` where+update 原子抢占，重复兑换 400、并发只入账一次（countUpdated 判 1）；壳页 `core/shell/purchase/` 输码入口可达
 - [ ] **端上调起**：`grep -rn "requestOrder" miniprogram/` 有命中；成功后 `entitlement-refresh` 起 2 分钟刷新窗口
 - [ ] **支付通知联测（可选）**：配 `DINGTALK_TOKEN`/`DINGTALK_SECRET` 后 dev 真实下单+支付 → 钉钉群收到 💳/💰 两张卡片且 💰 仅一条；退一笔 → 收到 ↩️ 卡片。**不配时链路行为与配置前完全一致（静默关闭）**
+
+### 进件完成后的标准操作（SOP，零仓库改动）
+
+1. 把进件产出的字段更新进 `dy_payment` 文档（`node setup/setup-secrets.js` 灌 `privateKeyPem`/`keyVersion`/`platformPublicKeyPem`/`tagGroup`，核对 `appId`/`appSecret`）——`set` 幂等，更新同一文档。
+2. 抖音云「服务设置 → 环境变量」配 `PAY_NOTIFY_URL`（dev/prod 各按本环境外网域名）。
+3. **重启一次容器**：`loadDySecret()` 有进程内永久缓存（无 TTL），DB 更新后已运行实例不会自动感知——这是唯一需要重启的原因，无需改代码、无需重新构建镜像。
+4. 发起一笔测试支付：`createOrder` 不再报 400「支付进件未完成」，返回 `byteAuthorization`。
 
 ---
 

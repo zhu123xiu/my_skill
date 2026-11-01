@@ -26,6 +26,11 @@
   **DB 优先**、`config.payment.products[]` 仅作 seed 源与 DB 未灌数据时的兜底，再回退 `core/pricing.js`。
   端上列表价取 `config` 服务 `getProducts`（同样 DB 优先、回退 config）。前端只展示、不传价、不做价格决策；
   `core/utils/pay.js` 不硬编码商品表。**免发版调价 = 改 `products` 集合文档。**
+- **进件产出值入库（零仓库改动）**：`tagGroup`（平台分配的标签组 ID）与 RSA 密钥同类，是进件产出值，
+  统一存 `{prefix}platform_secrets` 集合的 `dy_payment` 文档（字段 `tagGroup`），`createOrder` 经
+  `loadDySecret()` 读取，`config.payment.tagGroup` 仅作本地联调兜底。仓库 `template.config.js` **不放**
+  `tagGroup`/`productCode`（`productCode` 全仓无消费点，是死配置，一并删除）。进件完成后只更新 `dy_payment`
+  文档 + 配 `PAY_NOTIFY_URL` + 重启一次容器（`loadDySecret` 永久缓存、无 TTL），**不改代码、不重新构建镜像**。
 - **购买/兑换壳页**：`core/shell/purchase/index` 预置「列商品（DB 价）→ createOrder → requestPay →
   syncOrderStatus 兜底」+「激活码输入 → redeemActivationCode」双通路，iOS 或支付不可用时走激活码；
   业务侧把付费墙/入口 `navigateTo` 到该壳页即可，无需自写购买页。

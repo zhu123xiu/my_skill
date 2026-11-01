@@ -40,7 +40,8 @@ scripts/                →  新项目的 scripts/
 |------|------|------|
 | `appId` | 同上 | `tt` 开头 16 位 |
 | `collectionPrefix` | **★ 只改这一个，所有集合名由它拼出** | `myapp_` |
-| `payment.tagGroup` | 支付标签组 | `__UN_SHIFT_...` |
+| `payment.secretsDocId` | 支付密钥文档 id（`{prefix}platform_secrets` 集合内） | 默认 `dy_payment` |
+| ~~`payment.tagGroup`~~ | **不在仓库配置**：进件产出的标签组 ID 写入 `dy_payment` 文档的 `tagGroup` 字段，`createOrder` 从 `loadDySecret()` 读取，进件后零仓库改动（见 launch-checklist SOP） | — |
 | `payment.products` | 商品表 seed 源与 DB 兜底（itemId / title / priceFen / grant.type）；**运行时价格以 `{prefix}products` 集合为准** | 灌入 products 集合，改价免发版 |
 | `payment.orderEntryPath` | 支付回跳订单页路径 | 默认 `core/shell/orders/index` |
 | `membership.name` | 会员名称 | 自定义 |
